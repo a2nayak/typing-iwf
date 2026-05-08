@@ -1,0 +1,40 @@
+/* Global styles for Monaco Editor customizations */
+
+.nyku-empty-decoration {
+  /* This class is used as a placeholder for no decoration */
+}
+
+.nyku-line-selected {
+  background-color: rgba(39, 34, 185, 0.938);
+  /* background-color: rgb(53, 53, 161);  */
+}
+
+.nyku-line-not-selected {
+  /* background-color: rgb(26, 0, 30); */
+}
+
+.nyku-fadeIn {
+  animation: nyku-fadeInLineAnim 0.6s ease-in forwards;
+}
+
+@keyframes nyku-fadeInLineAnim {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.monaco-editor.hide-cursor .cursors-layer {
+  display: none;
+}
+
+.monaco-editor.hide-cursor,
+.monaco-editor.hide-cursor .margin {
+  pointer-events: none;
+  user-select: none;
+}
+
+code {
+  font-size: 15px;
+  line-height: 135%;
+  padding: 4px 8px;
+  background: var(--code-bg);
+}

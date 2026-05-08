@@ -1,0 +1,11 @@
+
+.simulatorText {
+    display: inline-block;
+    top: 0;
+    margin-left: 0.1em;
+    margin-bottom: 0.035em;
+    vertical-align: middle;
+    font-weight: 300;
+    font-family: Verdana, sans-serif;
+    font-size: 1em;
+}
