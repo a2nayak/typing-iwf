@@ -95,6 +95,17 @@ export class EditorManager {
         model.pushEditOperations([], [{ range: rangeToDelete, text: "" }], () => null);
     }
 
+    async replaceLineRange(range: monaco.Range, text: string) {
+        const model = this.editor.getModel()!;
+        model.pushEditOperations([], [{ range: range, text: text }], () => null);
+        return new monaco.Range(
+            range.startLineNumber, 
+            range.startColumn, 
+            range.startLineNumber, 
+            range.startColumn + text.length
+        );
+    }
+
     enableEditing() {
         this.setReadOnly(false);
     }
@@ -119,8 +130,31 @@ export class EditorManager {
         this.streamer?.stop();
     }
 
-    onKeyDown(listener: (e: KeyboardEvent) => void) {
-        this.editor.getDomNode()?.addEventListener("keydown", listener as EventListener);
+
+    registerPersistentKeyListener(targetKey: string, callback: () => void) {
+        const listener = (e: KeyboardEvent) => {
+            if (e.key === targetKey) {
+                callback();
+            }
+        };
+        document.addEventListener("keydown", listener);
+        return () => document.removeEventListener("keydown", listener);
+    }
+    
+    registerSingleKeyListener(targetKey: string, callback: () => void) {
+        const listener = (e: KeyboardEvent) => {
+            if (e.key === targetKey) {
+                document.removeEventListener("keydown", listener);
+                callback();
+            }
+        };
+        document.addEventListener("keydown", listener);
+    }
+
+    async waitForKeyPress(targetKey: string): Promise<void> {
+        return new Promise((resolve) => {
+            this.registerSingleKeyListener(targetKey, resolve);
+        });
     }
 
     focus() {

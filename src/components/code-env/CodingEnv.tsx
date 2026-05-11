@@ -4,11 +4,11 @@ import styles from "./CodingEnv.module.css";
 
 import { useRef, useEffect } from "react";
 import { VCNHandler } from "./VCNHandler";
-import { TextOptions } from "./TextOptions";
+import HiddenInput from "./HiddenInput";
 
 function CodingEnv() {
   const vcnHandlerRef = useRef<VCNHandler | null>(null);
-  const textOptionsRef = useRef<TextOptions | null>(null);
+  const hiddenApiRef = useRef<any>(null);
   return (
     <>
       <h1 style={{ userSelect: "none" }}>
@@ -36,13 +36,26 @@ function CodingEnv() {
             monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
                 noSemanticValidation: true,
                 noSyntaxValidation: true,
+                allowUnreachableCode: true,
+                diagnosticCodesToIgnore: [6133, 7027]
             });
         }}
         onMount={(editor) => {
             vcnHandlerRef.current = new VCNHandler(null, editor); 
             vcnHandlerRef.current.play();
+            // if hidden input mounted earlier, link it now
+            if (hiddenApiRef.current) {
+              vcnHandlerRef.current.linkHiddenInput(hiddenApiRef.current);
+            }
         }}
       />
+        <HiddenInput
+          onChange={(value) => vcnHandlerRef.current?.handleInput(value)}
+          onMount={(api) => {
+            hiddenApiRef.current = api;
+            if (vcnHandlerRef.current) vcnHandlerRef.current.linkHiddenInput(api);
+          }}
+        />
     </>
   );
 }

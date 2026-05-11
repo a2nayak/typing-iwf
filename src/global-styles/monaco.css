@@ -1,16 +1,29 @@
 /* Global styles for Monaco Editor customizations */
 
+.monaco-editor {
+    --nyku-option-bg: rgba(39, 34, 185, 0.938);
+}
+
 .nyku-empty-decoration {
   /* This class is used as a placeholder for no decoration */
 }
 
 .nyku-line-selected {
-  background-color: rgba(39, 34, 185, 0.938);
-  /* background-color: rgb(53, 53, 161);  */
+  background-color: var(--nyku-option-bg, rgba(39, 34, 185, 0.938));
 }
 
 .nyku-line-not-selected {
-  /* background-color: rgb(26, 0, 30); */
+}
+
+.nyku-ghost-text {
+  opacity: 0.5;
+  font-style: italic;
+}
+
+.nyku-ghost-text.nyku-matching-text { /* specificity override */
+  background-color: var(--nyku-option-bg, rgba(39, 34, 185, 0.938));
+  opacity: 1;
+  font-style: normal;
 }
 
 .nyku-fadeIn {

@@ -4,12 +4,14 @@ import type { VisualCodeNovel } from "./VisualCodeNovel";
 import * as monaco from "monaco-editor";
 
 export class VCNHandler {
-    novel: VisualCodeNovel;
-    editorManager: EditorManager;
-    currentSectionIndex: number;
+    private novel: VisualCodeNovel;
+    private editorManager: EditorManager;
+    private currentSectionIndex: number;
+    private activeOptions: TextOptions | null = null;
+  private hiddenInputApi: { getValue: () => string; setValue: (v: string) => void; clear: () => void } | null = null;
 
     //TODO: make this like an enum
-    game_state: "not_started" |
+    private game_state: "not_started" |
                 "context_stream" |
                 "choice_prompt" |
                 "user_input" = "not_started";  
@@ -22,25 +24,66 @@ export class VCNHandler {
     
     async play() {
         this.editorManager.hideCursor();
-        
-        await this.editorManager.sendTextStream(bubbleSortSegments()[0]);
 
+        await this.editorManager.waitForKeyPress("Enter");
+        await this.editorManager.sendTextStream(bubbleSortSegments()[0]);
         await this.editorManager.sendTextLineStream("// Set temp to arr[j]");
         
-        let exampleOptions = new TextOptions(
+        this.activeOptions = new TextOptions(
             this.editorManager, 
-            ["> int temp = arr[j];", "> set temp = arr[j];", "> let temp = arr[j];"]);
+            ["int temp = arr[j];", "set temp = arr[j];", "let temp = arr[j];"],
+            2
+        );
 
-        await exampleOptions.send();
+        await this.activeOptions.send();
+        await this.activeOptions.waitForCorrectAnswer();
+        await this.activeOptions.remove();
 
-        await new Promise(resolve => setTimeout(resolve, 5000));
+        //TODO: restore the indent in active options instead of just sending the line like this
+        await this.editorManager.sendTextLine("        let temp = arr[j];");
 
-        await exampleOptions.remove();
+        this.hiddenInputApi?.clear();
+
+        await this.editorManager.sendTextStream(bubbleSortSegments()[1]);
+        await this.editorManager.sendTextLineStream("// Break if no swaps happened");
+
+        this.activeOptions = new TextOptions(
+            this.editorManager, 
+            ["if !swapped then break;", "if (!swapped) break;", "if not swapped: break;"],
+            1
+        );
+
+        await this.activeOptions.send();
+        await this.activeOptions.waitForCorrectAnswer();
+        await this.activeOptions.remove();
+
+        this.hiddenInputApi?.clear();
+
+        await this.editorManager.sendTextLine("    if (!swapped) break;");
+
+        await this.editorManager.sendTextStream(bubbleSortSegments()[2]);
+
+        await this.editorManager.sendTextStream(
+`
+/*
+            good job
+*/`);
+
+        this.activeOptions = null;
+    }
+
+    handleInput(value: string) {
+        this.activeOptions?.updateInput(value);
+        console.log("User input:", value);
+    }
+
+    linkHiddenInput(api: { getValue: () => string; setValue: (v: string) => void; clear: () => void }) {
+      this.hiddenInputApi = api;
     }
 }
 
 function bubbleSortSegments(){
-  let baseCode = "" + 
+  return [
 `function bubbleSort(arr) {
   let n = arr.length;
   let swapped;
@@ -50,45 +93,20 @@ function bubbleSortSegments(){
 
     for (let j = 0; j < n - i - 1; j++) {
       if (arr[j] > arr[j + 1]) {
-        // swap elements
-        let temp = arr[j];
-        arr[j] = arr[j + 1];
+`,
+//      let temp = arr[j];  
+`        arr[j] = arr[j + 1];
         arr[j + 1] = temp;
 
         swapped = true;
       }
     }
 
-    // If no swapping happened, array is already sorted
-    if (!swapped) break;
+`,
+//    if (!swapped) break;
+`
   }
 
   return arr;
-}`;
-    // split this comment section: produce chunks that end with comment lines
-    const lines = baseCode.split(/\r?\n/);
-    const chunks: string[] = [];
-    let acc: string[] = [];
-
-    for (const line of lines) {
-      if (line.trim() === "") {
-        // preserve blank lines inside the accumulator
-        acc.push(line);
-        continue;
-      }
-
-      acc.push(line);
-
-      if (line.trim().startsWith("//")) {
-        // when a comment line is encountered, flush the accumulator as a chunk
-        chunks.push(acc.join("\n") + "\n");
-        acc = [];
-      }
-    }
-
-    if (acc.length > 0) {
-      chunks.push(acc.join("\n") + "\n");
-    }
-
-    return chunks;
+}`];
 }
